@@ -1,0 +1,52 @@
+public class ProductTableTriggerHandler {  
+     
+    public static void beforeInsertTriggerHandler(List<Product_Table__c> productsFromTrigger) {
+        
+        List<Warehouse__c> warehouses = [SELECT Id, Period_Start__c, Period_End__c FROM Warehouse__c LIMIT 50000];
+        List<Warehouse__c> newWarehousesToCreate = new List<Warehouse__c>();
+        Integer orgPeriodTerm = 1;
+        Org_Configuration__c orgSettings = Org_Configuration__c.getInstance();
+        
+        if(orgSettings.Period_Term__c != null) {
+            orgPeriodTerm = Integer.valueof(orgSettings.Period_Term__c);
+        }
+        
+        for(Product_Table__c product :productsFromTrigger) {
+            Date productAddedDate = product.Added_Date__c;
+            
+            if(productAddedDate == null) {
+                product.Added_Date__c = date.today();
+            }
+            
+            for(Warehouse__c warehouse :warehouses) {
+                Boolean isStartDateValid = (warehouse.Period_Start__c <= product.Added_Date__c);
+                Boolean isEndDateValid = (warehouse.Period_End__c >= product.Added_Date__c);
+                if(isStartDateValid && isEndDateValid) {
+                    product.Warehouse__c = warehouse.Id;  
+                    break;   
+                }
+            }
+            
+            if(product.Warehouse__c == null) {
+                Warehouse__c warehouse = new Warehouse__c();
+                warehouse.Name = 'Warehouse' + String.valueOf(product.Added_Date__c) + ' ' + product.Added_Date__c.addDays(orgPeriodTerm);
+                warehouse.Period_Start__c = product.Added_Date__c;
+                warehouse.Period_Start__c = product.Added_Date__c.addDays(orgPeriodTerm);
+                newWarehousesToCreate.add(warehouse);                 
+            }
+        }
+        
+        if(newWarehousesToCreate.size() > 0){
+            insert newWarehousesToCreate;
+        }
+        
+        Integer i = 0;
+        for(Product_Table__c product :productsFromTrigger) {
+            if(product.Warehouse__c == null) {
+                product.Warehouse__c = newWarehousesToCreate[i].Id;
+                i++;
+            }
+        }    
+    }
+
+}
