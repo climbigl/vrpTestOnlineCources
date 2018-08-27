@@ -1,0 +1,93 @@
+public class ShopingPageController {
+    
+    public String messageType {get; set;}
+    public String messageDetails {get; set;}
+    public Contact contact;
+    public Product_Table__c product {get; set;}
+    public Boolean isProductExist {get;set;}
+    public Boolean showInfo {get;set;}
+    
+    public Integer unitCount {get; set;}
+    public Double totalAmount {get; set;}
+    
+    public Contact getContact() {
+        if(contact == null) {
+            contact = new Contact();
+        }
+        return contact;
+    }
+    
+    public void setAmount() {
+        Double amount = Double.valueOf(ApexPages.currentPage().getParameters().get('amount'));        
+        totalAmount = amount;
+    }
+    
+    public PageReference Cancel() {
+        String refer = ApexPages.currentPage().getParameters().get('refer');
+        PageReference previousPage;
+        if(refer == 'details') {
+            previousPage = Page.ProductDetails;
+            previousPage.getParameters().put('id', product.Id);
+        } else if(refer == 'list') {
+            previousPage = Page.Product_List;            
+        } else {
+            return null;
+        }
+        
+        previousPage.setRedirect(true);
+        return previousPage;
+    }
+    
+    public void completeOffer() {
+        
+        if(unitCount <= 0 ) {
+            messageDetails = 'Wrong amount of unit.';
+            messageType = 'error';
+            showInfo = true;
+            return;
+        }
+        
+        Savepoint sp = Database.setSavepoint();
+        
+        upsert contact Contact.fields.Email;
+       
+        Order_Table__c newOrder = new Order_Table__c(Product__c = product.Id, Units__c = unitCount, Order_Amount__c = (product.Unit_Price__c * unitCount), Contact__c = contact.Id);
+        insert newOrder;
+        
+        Decimal checkAmount = product.Units_Available__c;
+        checkAmount -= unitCount;
+        
+        if(checkAmount <= 0) {
+            Database.rollback(sp);
+            messageDetails = 'There is not availiable amount of unit such as ' + unitCount + '.' + ' Units availiable ' + product.Units_Available__c;
+            messageType = 'error';           
+        } else {
+           product.Units_Available__c -= unitCount;
+           update product;
+           messageDetails = 'Offer completed.';
+           messageType = 'info';
+        }
+        
+        showInfo = true;
+    }
+    
+   public ShopingPageController() {
+        unitCount = 0;
+        totalAmount = 0.0;
+        showInfo = false;
+        
+        Id productId = ApexPages.currentPage().getParameters().get('id');
+        if(productId != null) {
+            product = [SELECT Id, Name, Image_URL__c, Warehouse__c, Product_Description__c, Unit_Price__c, Units_Available__c FROM Product_Table__c WHERE Id = :productId];
+            isProductExist = true;
+            if(product.Unit_Price__c <= 0){
+                product.Unit_Price__c = 0;
+            }
+        } else {
+            messageDetails = 'The product was not selected.';
+            messageType = 'error';
+            showInfo = true;
+            isProductExist = false;
+        }
+    }    
+}
