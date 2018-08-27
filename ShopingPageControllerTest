@@ -1,0 +1,58 @@
+@isTest
+private class ShopingPageControllerTest {
+
+    @isTest static void ShopingPageControllerTest1() {
+    
+        Product_Table__c product = new Product_Table__c(
+            Name = 'test',
+            Image_URL__c = 'http://google.com/',
+            Product_Description__c = 'some description',
+            Unit_Price__c = 5,
+            Units_Available__c = 1
+        );
+        
+        insert product;
+        
+        ApexPages.currentPage().getParameters().put('Id', product.id);
+        ApexPages.currentPage().getParameters().put('refer', 'list');
+        ApexPages.currentPage().getParameters().put('amount', '10');
+        
+        ShopingPageController classInstance = new ShopingPageController(); 
+        
+        System.assertEquals(classInstance.Cancel() != null , true);
+       
+    }
+
+    @isTest static void ShopingPageControllerTest2() {
+    
+        Product_Table__c product = new Product_Table__c(
+            Name = 'test',
+            Image_URL__c = 'http://google.com/',
+            Product_Description__c = 'some description',
+            Unit_Price__c = 5,
+            Units_Available__c = 1
+        );
+        
+        insert product;
+        
+        ApexPages.currentPage().getParameters().put('refer', 'list');
+        ApexPages.currentPage().getParameters().put('Id', product.id);
+        ApexPages.currentPage().getParameters().put('amount', '10');
+        
+        ShopingPageController classInstance = new ShopingPageController(); 
+        Contact testContact = classInstance.getContact();
+        testContact.LastName = 'LastName';
+        testContact.Email = 'test@gmail.com';
+        classInstance.unitCount = 1;
+        classInstance.setAmount();
+        
+        classInstance.completeOffer();
+        
+        
+        //Order_Table__c newOrder = [SELECT Id FROM Order_Table__c];
+        
+        //System.assertEquals(newOrder != null , true);
+       
+    }
+    
+}
