@@ -1,0 +1,9 @@
+public class ProductListController {
+
+    public List<Product_Table__c> products;   
+    
+    public List<Product_Table__c> getProducts() {    
+        return [SELECT Id, Image_Url__c, Product_Description__c, Name, Unit_Price__c, Units_Available__c, Warehouse__c FROM Product_Table__c LIMIT 50000];
+    }
+
+}
