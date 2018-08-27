@@ -1,0 +1,16 @@
+public class ProductDetailsController {
+
+    public Product_Table__c product;
+    public Id productId = apexpages.currentpage().getparameters().get('Id');
+   
+    public Product_Table__c getProduct() {
+        List<Product_Table__c> products = [SELECT Id, Image_Url__c, Product_Description__c, Name, Unit_Price__c, Units_Available__c, Warehouse__c FROM Product_Table__c WHERE Id =:productId LIMIT 50000];
+        
+        if (products.size() > 0) {
+            return products[0];
+        } else {
+            return null;
+        }
+    }
+
+}
